@@ -1,0 +1,124 @@
+- hosts: loadbalancer
+  vars_files:
+    - vars.yml
+  tasks:
+  - name: Creation of directory to be mounted
+    file:
+      state: directory
+      path: "{{ mount_directory }}"
+
+  - name: Mounting directory created to CDROM
+    mount:
+      src: "/dev/cdrom"
+      path: "{{ mount_directory }}"
+      state: mounted
+      fstype: "iso9660"
+
+  - name: YUM Repository - AppStream
+    yum_repository:
+      baseurl: "{{ mount_directory }}/AppStream"
+      name: "DVD1"
+      description: "YUM Repository - AppStream"
+      enabled: true
+      gpgcheck: no
+
+  - name: YUM Repository - BaseOS
+    yum_repository:
+      baseurl: "{{ mount_directory }}/BaseOS"
+      name: "DVD2"
+      description: "YUM Repository - BaseOS"
+      enabled: true
+      gpgcheck: no
+
+  - name: Installation of HAProxy Software
+    package:
+      name: "haproxy"
+      state: present
+
+  - name: HAProxy Configuration File Setup
+    template:
+      dest: "/etc/haproxy/haproxy.cfg"
+      src: "templates/haproxy.cfg"
+    notify: Restart Load Balancer
+
+  - name: Starting Load Balancer Service
+    service:
+      name: "haproxy"
+      state: started
+      enabled: yes
+
+  - name: Stopping Firewall Service
+    service:
+      name: "firewalld"
+      state: stopped
+      enabled: yes
+
+  - name: Setting SELinux Permissive
+    selinux:
+      policy: targeted
+      state: permissive
+
+  handlers:
+    - name: Restart Load Balancer
+      systemd:
+        name: "haproxy"
+        state: restarted
+        enabled: yes
+
+
+- hosts: webserver
+  vars_files:
+    - vars.yml
+  tasks:
+  - name: Creation of directory to be mounted
+    file:
+      state: directory
+      path: "{{ mount_directory }}"
+
+  - name: Mounting directory created to CDROM
+    mount:
+      src: "/dev/cdrom"
+      path: "{{ mount_directory }}"
+      state: mounted
+      fstype: "iso9660"
+
+  - name: YUM Repository - AppStream
+    yum_repository:
+      baseurl: "{{ mount_directory }}/AppStream"
+      name: "DVD1"
+      description: "YUM Repository - AppStream"
+      gpgcheck: no
+
+  - name: YUM Repository - BaseOS
+    yum_repository:
+      baseurl: "{{ mount_directory }}/BaseOS"
+      name: "DVD2"
+      description: "YUM Repository - BaseOS"
+      gpgcheck: no
+
+  - name: HTTPD Installation
+    package: 
+      name: "httpd"
+      state: present
+    when: ansible_distribution == "RedHat"
+
+  - name: Web Page Setup
+    template:
+      dest: "/var/www/html"
+      src: "web/index.html"
+
+  - name: Setting SELinux Permissive
+    selinux:
+      policy: targeted
+      state: permissive
+
+  - name: Stopping Firewall Service
+    service:
+      name: "firewalld"
+      state: stopped
+
+  - name: Starting HTTPD Service
+    service:
+      name: "httpd"
+      state: started
+      enabled: yes
