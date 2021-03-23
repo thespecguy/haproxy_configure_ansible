@@ -116,6 +116,7 @@
     service:
       name: "firewalld"
       state: stopped
+      enabled: yes
 
   - name: Starting HTTPD Service
     service:
