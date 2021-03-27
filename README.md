@@ -1,4 +1,4 @@
-__<h1>How to configure HAProxy and automatic updation of it’s configuration file each time managed node is added</h1>__
+__<h1>How to configure HAProxy and automatic updation of it’s configuration file each time managed node is added using Ansible</h1>__
 
 ![Ansible_HAProxy_HTTPD](https://miro.medium.com/max/875/1*_8s1p8MTZhFPxznYH7dzZw.jpeg)
 
